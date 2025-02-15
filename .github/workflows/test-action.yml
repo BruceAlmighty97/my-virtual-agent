@@ -1,0 +1,33 @@
+name: Test AWS Action Role
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  list-s3:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: GithubActions
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Debug AWS Caller Identity
+        run: aws sts get-caller-identity
+
+      - name: List S3 Buckets
+        run: |
+          aws s3 ls
