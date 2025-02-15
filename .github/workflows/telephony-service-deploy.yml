@@ -1,0 +1,47 @@
+name: Telephony Service Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'telephony-service/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials via OIDC
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActionsSession
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      run: |
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 456235764148.dkr.ecr.us-east-1.amazonaws.com
+
+    - name: Build, Tag, and Push Docker Image
+      run: |
+        docker build -t mva-telephony ./telephony-service
+        docker tag mva-telephony:latest 456235764148.dkr.ecr.us-east-1.amazonaws.com/mva-telephony:latest
+        docker push 456235764148.dkr.ecr.us-east-1.amazonaws.com/mva-telephony:latest
+
+    # - name: Update ECS Service
+    #   run: |
+    #     aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
