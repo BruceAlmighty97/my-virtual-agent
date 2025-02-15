@@ -23,7 +23,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: GithubActions
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
       
       - name: Debug AWS Caller Identity
         run: aws sts get-caller-identity
