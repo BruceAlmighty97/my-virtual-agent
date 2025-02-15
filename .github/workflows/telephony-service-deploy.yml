@@ -6,8 +6,8 @@ on:
     branches:
       - main
       - telephony-setup
-    paths:
-      - 'telephony-service/**'
+    # paths:
+    #   - 'telephony-service/**'
 
 permissions:
   id-token: write
