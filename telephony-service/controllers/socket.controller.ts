@@ -27,14 +27,28 @@ export class SocketController {
     }
 
     public initialize() {
-        this._ws.on("connection", (ws: WebSocket, request: IncomingMessage) => {
-            const url = new URL(request.url || '', `wss://${request.headers.host}`);
-            const callSid = url.searchParams.get('CallSid');
-            console.log(`Call started for callSid ${callSid}`);
+        this._ws.on("connection", async (ws: WebSocket, request: IncomingMessage) => {
+            const deepgramSocket = this._deepgramService.getListenSocket();
+            let callSid: string;
+            let streamSid: string;
+
+            ws.onmessage = async (message: WebSocket.MessageEvent) => {
+                const data = JSON.parse(message.data.toString()) as TwilioSocketMessage;
+
+                if (data.event === 'start') {
+                    callSid = data.start?.callSid ?? "";
+                    streamSid = data.start?.streamSid ?? "";
+                    console.log(`Call started for callSid ${callSid}`);
+                }
+
+                if (data.event === 'media') {
+                    const payload = data.media?.payload ?? "";
+                    const audioBuffer = Buffer.from(payload, 'base64');
+                    deepgramSocket.send(audioBuffer);
+                }
+            }
             
-            // ws.on("message", (message) => {
-            //     console.log(`Received message => ${message}`);
-            // });
+            
 
             ws.on("close", () => {
                 console.log(`Call ended for callSid ${callSid}`);
