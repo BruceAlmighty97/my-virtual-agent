@@ -1,6 +1,7 @@
 import { IncomingMessage } from "http";
 import WebSocket, { WebSocketServer } from "ws";
-import { DeepgramService } from "../services/deepgram.service";
+import { DeepgramService, DeepgramTranscriptionResults } from "../services/deepgram.service";
+import { LiveTranscriptionEvents } from "@deepgram/sdk";
 
 interface TwilioSocketMessage {
     event: 'start' | 'stop' | 'media';
@@ -47,8 +48,19 @@ export class SocketController {
                     deepgramSocket.send(audioBuffer);
                 }
             }
+
+            deepgramSocket.on(LiveTranscriptionEvents.Open, () => {
+                console.log(`Deepgram connection opened for callSid ${callSid}`);
+
+                deepgramSocket.on(LiveTranscriptionEvents.Transcript, async (data: DeepgramTranscriptionResults) => {
+                    if (data.speech_final) {
+                        const transcript = data?.channel?.alternatives[0]?.transcript || "";
+                        console.log(`Transcript received for callSid ${callSid}: ${transcript}`);
+                    }
+                });
+            });
             
-            
+
 
             ws.on("close", () => {
                 console.log(`Call ended for callSid ${callSid}`);

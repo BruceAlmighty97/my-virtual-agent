@@ -1,5 +1,19 @@
 import { createClient, DeepgramClient } from "@deepgram/sdk";
 
+export interface DeepgramTranscriptionResults {
+    speech_final: boolean;
+    start: number;
+    duration: number;
+    channel: {
+        alternatives: [
+            {
+                transcript: string;
+                confidence: number;
+            }
+        ]
+    }
+}
+
 export class DeepgramService {
     private _client: DeepgramClient;
 
