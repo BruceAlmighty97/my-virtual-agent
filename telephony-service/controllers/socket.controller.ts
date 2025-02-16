@@ -2,6 +2,21 @@ import { IncomingMessage } from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import { DeepgramService } from "../services/deepgram.service";
 
+interface TwilioSocketMessage {
+    event: 'start' | 'stop' | 'media';
+    sequenceNumber: string;
+    streamSid: string;
+    start?: {
+        streamSid: string;
+        callSid: string;
+    }
+    media?: {
+        track: string;
+        timestamp: number;
+        payload: string;
+    }
+}
+
 export class SocketController {
     private _ws: WebSocketServer;
     private _deepgramService: DeepgramService;
