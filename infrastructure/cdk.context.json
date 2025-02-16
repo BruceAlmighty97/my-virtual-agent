@@ -1,0 +1,14 @@
+{
+  "hosted-zone:account=456235764148:domainName=geoffreyholland.com:region=us-east-1": {
+    "Id": "/hostedzone/Z00596301EVKR8PK30S6O",
+    "Name": "geoffreyholland.com."
+  },
+  "availability-zones:account=456235764148:region=us-east-1": [
+    "us-east-1a",
+    "us-east-1b",
+    "us-east-1c",
+    "us-east-1d",
+    "us-east-1e",
+    "us-east-1f"
+  ]
+}
