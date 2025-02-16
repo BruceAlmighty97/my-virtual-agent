@@ -16,6 +16,11 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCOUNT: 456235764148
+      AWS_REGION: us-east-1
+      ECS_CLUSTER: mva-cluster
+      ECR_REPOSITORY: mva-telephony
 
     steps:
     - name: Checkout Code
@@ -26,18 +31,18 @@ jobs:
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         role-session-name: GitHubActionsSession
-        aws-region: us-east-1
+        aws-region: ${{ env.AWS_REGION }}
 
     - name: Login to Amazon ECR
       id: login-ecr
       run: |
-        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 456235764148.dkr.ecr.us-east-1.amazonaws.com
+        aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
     - name: Build, Tag, and Push Docker Image
       run: |
-        docker build -t mva-telephony ./telephony-service
-        docker tag mva-telephony:latest 456235764148.dkr.ecr.us-east-1.amazonaws.com/mva-telephony:latest
-        docker push 456235764148.dkr.ecr.us-east-1.amazonaws.com/mva-telephony:latest
+        docker build -t ${{ env.ECR_REPOSITORY }} ./telephony-service
+        docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+        docker push ${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
 
     # - name: Update ECS Service
     #   run: |
