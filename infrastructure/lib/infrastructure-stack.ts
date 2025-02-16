@@ -7,6 +7,8 @@ import * as route53 from "aws-cdk-lib/aws-route53";
 import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as ecs_patterns from "aws-cdk-lib/aws-ecs-patterns";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -14,6 +16,7 @@ export class InfrastructureStack extends cdk.Stack {
 
     const domainName = "geoffreyholland.com";
     const telephonySubdomain = `telephony.${domainName}`;
+    const secretsName = 'MyVirtualAgentSecrets';
 
     const hostedZone = route53.HostedZone.fromLookup(this, "HostedZone", {
       domainName,
@@ -53,6 +56,8 @@ export class InfrastructureStack extends cdk.Stack {
       })
     );
 
+    const myVirtualAgentSecrets = secretsmanager.Secret.fromSecretNameV2(this, secretsName, secretsName);
+
     const fargateService =
       new ecs_patterns.ApplicationLoadBalancedFargateService(
         this,
@@ -68,6 +73,11 @@ export class InfrastructureStack extends cdk.Stack {
             ),
             containerPort: 3000,
             executionRole: executionRole,
+            secrets: {
+              DEEPGRAM_API_KEY : ecs.Secret.fromSecretsManager(myVirtualAgentSecrets, 'DEEPGRAM_API_KEY'),
+              ELEVENLABS_API_KEY : ecs.Secret.fromSecretsManager(myVirtualAgentSecrets, 'ELEVENLABS_API_KEY'),
+              ELEVENLABS_VOICE_ID : ecs.Secret.fromSecretsManager(myVirtualAgentSecrets, 'ELEVENLABS_VOICE_ID'),
+            }
           },
           certificate,
           domainName: telephonySubdomain,
