@@ -2,12 +2,12 @@ import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as certificatemanager from "aws-cdk-lib/aws-certificatemanager";
 import * as ecs_patterns from "aws-cdk-lib/aws-ecs-patterns";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as logs from "aws-cdk-lib/aws-logs";
 
 
 export class InfrastructureStack extends cdk.Stack {
@@ -59,6 +59,11 @@ export class InfrastructureStack extends cdk.Stack {
       })
     );
 
+    const logGroup = new logs.LogGroup(this, "TelephonyLogGroup", {
+      logGroupName: "/ecs/my-virtual-agent",
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // Change to RETAIN in production
+    });
+
     const myVirtualAgentSecrets = secretsmanager.Secret.fromSecretNameV2(this, secretsName, secretsName);
 
     const fargateService =
@@ -80,7 +85,11 @@ export class InfrastructureStack extends cdk.Stack {
               DEEPGRAM_API_KEY : ecs.Secret.fromSecretsManager(myVirtualAgentSecrets, 'DEEPGRAM_API_KEY'),
               ELEVENLABS_API_KEY : ecs.Secret.fromSecretsManager(myVirtualAgentSecrets, 'ELEVENLABS_API_KEY'),
               ELEVENLABS_VOICE_ID : ecs.Secret.fromSecretsManager(myVirtualAgentSecrets, 'ELEVENLABS_VOICE_ID'),
-            }
+            },
+            logDriver: new ecs.AwsLogDriver({
+              streamPrefix: "telephony-service",
+              logGroup,
+            }),
           },
           certificate,
           domainName: telephonySubdomain,
