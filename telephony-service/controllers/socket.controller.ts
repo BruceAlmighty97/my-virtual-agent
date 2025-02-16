@@ -59,8 +59,6 @@ export class SocketController {
                     }
                 });
             });
-            
-
 
             ws.on("close", () => {
                 console.log(`Call ended for callSid ${callSid}`);
