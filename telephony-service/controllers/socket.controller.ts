@@ -59,8 +59,10 @@ export class SocketController {
                 deepgramSocket.on(LiveTranscriptionEvents.Transcript, async (data: DeepgramTranscriptionResults) => {
                     if (data.speech_final) {
                         const transcript = data?.channel?.alternatives[0]?.transcript || "";
-                        console.log(`Transcript received for callSid ${callSid}: ${transcript}`);
-                        this.sendAudioToCall(ws, streamSid, `It sounds like you said, ${transcript}. Is that correct?`);
+                        if (transcript !== "") {
+                            console.log(`Transcript received for callSid ${callSid}: ${transcript}`);
+                            this.sendAudioToCall(ws, streamSid, `It sounds like you said, ${transcript}. Is that correct?`);
+                        }
                     }
                 });
             });
