@@ -1,6 +1,7 @@
 import { IncomingMessage } from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import { DeepgramService, DeepgramTranscriptionResults } from "../services/deepgram.service";
+import { ElevenlabsService } from "../services/elevenlabs.service";
 import { LiveTranscriptionEvents } from "@deepgram/sdk";
 
 interface TwilioSocketMessage {
@@ -21,10 +22,12 @@ interface TwilioSocketMessage {
 export class SocketController {
     private _ws: WebSocketServer;
     private _deepgramService: DeepgramService;
+    private _elevenlabsService: ElevenlabsService;
 
     constructor(ws: WebSocketServer) {
         this._ws = ws;
         this._deepgramService = new DeepgramService();
+        this._elevenlabsService = new ElevenlabsService();
     }
 
     public initialize() {
@@ -40,6 +43,7 @@ export class SocketController {
                     callSid = data.start?.callSid ?? "";
                     streamSid = data.start?.streamSid ?? "";
                     console.log(`Call started for callSid ${callSid}`);
+                    this.sendAudioToCall(ws, streamSid, 'Hello, welcome to the call, I am your personal virtual assistant, Jessica. How can I help you?');
                 }
 
                 if (data.event === 'media') {
@@ -56,6 +60,7 @@ export class SocketController {
                     if (data.speech_final) {
                         const transcript = data?.channel?.alternatives[0]?.transcript || "";
                         console.log(`Transcript received for callSid ${callSid}: ${transcript}`);
+                        this.sendAudioToCall(ws, streamSid, `It sounds like you said, ${transcript}. Is that correct?`);
                     }
                 });
             });
@@ -65,4 +70,16 @@ export class SocketController {
             });
         });
     }
+
+    private async sendAudioToCall(ws: WebSocket, streamSid: string, text: string) {
+        ws.send(
+           JSON.stringify({
+               streamSid,
+               event: 'media',
+               media: {
+                   payload: await this._elevenlabsService.convertTextToSpeect(text),
+               },
+           })
+       );
+   }
 }
