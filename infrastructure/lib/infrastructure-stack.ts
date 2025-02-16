@@ -24,7 +24,10 @@ export class InfrastructureStack extends cdk.Stack {
 
     const vpc = new ec2.Vpc(this, "Vpc", { maxAzs: 2 });
 
-    const cluster = new ecs.Cluster(this, "MyVirtualAgentCluster", { vpc });
+    const cluster = new ecs.Cluster(this, "MyVirtualAgentCluster", { 
+      vpc,
+      clusterName: "mva-cluster"
+    });
 
     const certificate = new certificatemanager.Certificate(
       this,
@@ -84,6 +87,9 @@ export class InfrastructureStack extends cdk.Stack {
           domainZone: hostedZone,
         }
       );
+    // Override the ECS Service Name
+    const cfnService = fargateService.service.node.defaultChild as ecs.CfnService;
+    cfnService.serviceName = "mva-telephony-service";
 
     new cdk.CfnOutput(this, "ALBDNS", {
       value: fargateService.loadBalancer.loadBalancerDnsName,
