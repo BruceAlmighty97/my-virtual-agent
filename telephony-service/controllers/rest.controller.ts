@@ -1,5 +1,6 @@
 import { Express, Request, Response  } from 'express';
 import { twiml } from "twilio";
+import axios from 'axios';
 
 export class RestController {
     private _app: Express;
@@ -12,6 +13,18 @@ export class RestController {
         // Health check endpoint
         this._app.get("/", (req: Request, res: Response) => {
             res.status(200).send('OK');
+        });
+
+        this._app.get("/test1", async (req: Request, res: Response) => {
+            console.log('hello')
+            try {
+                const response = await axios.get('http://agentic.geoffreyholland.com:80');
+                const data = response.data;
+                res.status(200).send(data)
+            } catch (error) {
+                console.log(error)
+                res.status(500).send('Error fetching data');
+            }
         });
 
         this._app.post("/twilio", (req: Request, res: Response) => {
