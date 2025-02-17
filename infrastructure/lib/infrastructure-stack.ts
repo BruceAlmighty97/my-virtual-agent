@@ -87,6 +87,9 @@ export class InfrastructureStack extends cdk.Stack {
             ),
             containerPort: 3000,
             executionRole: executionRole,
+            environment: {
+              AGENTIC_BASE_URL: 'https://agentic.geoffreyholland.com'
+            },
             secrets: {
               DEEPGRAM_API_KEY: ecs.Secret.fromSecretsManager(
                 myVirtualAgentSecrets,
@@ -99,6 +102,10 @@ export class InfrastructureStack extends cdk.Stack {
               ELEVENLABS_VOICE_ID: ecs.Secret.fromSecretsManager(
                 myVirtualAgentSecrets,
                 "ELEVENLABS_VOICE_ID"
+              ),
+              MY_VIRTUAL_AGENT_API_KEY: ecs.Secret.fromSecretsManager(
+                myVirtualAgentSecrets,
+                "MY_VIRTUAL_AGENT_API_KEY"
               ),
             },
             logDriver: new ecs.AwsLogDriver({
@@ -117,84 +124,73 @@ export class InfrastructureStack extends cdk.Stack {
     cfnService.serviceName = "mva-telephony-service";
 
     /* AGENTIC ASSETS */
-    const privateLoadBalancer = new elbv2.ApplicationLoadBalancer(
+
+    const agenticCertificate = new certificatemanager.Certificate(
       this,
-      "AgenticALB",
+      "AgenticCertificate",
       {
-        vpc,
-        internetFacing: false,
-        vpcSubnets: {
-          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-        },
+        domainName: agenticSubdomain,
+        validation:
+          certificatemanager.CertificateValidation.fromDns(hostedZone),
       }
     );
 
-    const privateListener = privateLoadBalancer.addListener("AgenticListener", {
-      port: 80,
-      open: false,
-    });
-
-    const agenticTaskDefinition = new ecs.FargateTaskDefinition(
-      this,
-      "AgenticTaskDef",
-      {
-        family: "mva-agentic-service-task",
-        memoryLimitMiB: 512,
-        cpu: 256, 
-        executionRole: executionRole,
-      }
-    );
-
-    const agenticContainer = agenticTaskDefinition.addContainer(
-      "AgenticContainer",
-      {
-        image: ecs.ContainerImage.fromRegistry(
-          "456235764148.dkr.ecr.us-east-1.amazonaws.com/mva-agentic:latest"
-        ),
-        logging: new ecs.AwsLogDriver({
-          streamPrefix: "agentic-service",
-          logGroup,
-        }),
-        portMappings: [
-          {
-            containerPort: 3000, // Corrected placement of containerPort
-            protocol: ecs.Protocol.TCP,
+    const agenticFargateService =
+      new ecs_patterns.ApplicationLoadBalancedFargateService(
+        this,
+        "AgenticService",
+        {
+          cluster,
+          memoryLimitMiB: 1024,
+          cpu: 512,
+          desiredCount: 2,
+          taskImageOptions: {
+            image: ecs.ContainerImage.fromRegistry(
+              "456235764148.dkr.ecr.us-east-1.amazonaws.com/mva-agentic:latest"
+            ),
+            containerPort: 3000,
+            executionRole: executionRole,
+            environment: {
+              LANGSMITH_TRACING: 'true',
+              LANGSMITH_ENDPOINT: 'https://api.smith.langchain.com',
+              LANGSMITH_PROJECT: 'my-virtual-agent'
+            },
+            secrets: {
+              LANGSMITH_API_KEY: ecs.Secret.fromSecretsManager(
+                myVirtualAgentSecrets,
+                "LANGSMITH_API_KEY"
+              ),
+              GROQ_API_KEY: ecs.Secret.fromSecretsManager(
+                myVirtualAgentSecrets,
+                "GROQ_API_KEY"
+              ),
+              TAVILY_API_KEY: ecs.Secret.fromSecretsManager(
+                myVirtualAgentSecrets,
+                "TAVILY_API_KEY"
+              ),
+              OPENAI_API_KEY: ecs.Secret.fromSecretsManager(
+                myVirtualAgentSecrets,
+                "OPENAI_API_KEY"
+              ),
+              MY_VIRTUAL_AGENT_API_KEY: ecs.Secret.fromSecretsManager(
+                myVirtualAgentSecrets,
+                "MY_VIRTUAL_AGENT_API_KEY"
+              ),
+            },
+            logDriver: new ecs.AwsLogDriver({
+              streamPrefix: "agentic-service",
+              logGroup,
+            }),
           },
-        ],
-      }
-    );
+          certificate: agenticCertificate,
+          domainName: agenticSubdomain,
+          domainZone: hostedZone,
+        }
+      );
 
-    const agenticService = new ecs.FargateService(this, "AgenticService", {
-      cluster,
-      taskDefinition: agenticTaskDefinition,
-      vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS, // Deploy in private subnets
-      },
-      assignPublicIp: false, // Ensures it is not exposed publicly
-      desiredCount: 2,
-    });
-
-    const cfnAgenticService = agenticService.node
+    const agenticCfnService = agenticFargateService.service.node
       .defaultChild as ecs.CfnService;
-    cfnAgenticService.serviceName = "mva-agentic-service";
-
-    privateListener.addTargets("AgenticTargetGroup", {
-      port: 3000,
-      protocol: elbv2.ApplicationProtocol.HTTP,
-      targets: [agenticService],
-      healthCheck: {
-        path: "/",
-        interval: cdk.Duration.seconds(30),
-      },
-    });
-
-    new route53.ARecord(this, "AgenticDnsRecord", {
-      zone: hostedZone,
-      recordName: agenticSubdomain,
-      target: route53.RecordTarget.fromAlias(
-        new route53_targets.LoadBalancerTarget(privateLoadBalancer)
-      ),
-    });
+    agenticCfnService.serviceName = "mva-agentic-service";
 
     /* OUTPUT */
     new cdk.CfnOutput(this, "ALBDNS", {
