@@ -14,6 +14,16 @@ export class RestController {
             res.status(200).send('OK');
         });
 
+        this._app.get("/test1", async (req: Request, res: Response) => {
+            try {
+                const response = await fetch('http://agentic.geoffreyholland.com');
+                const data = await response.text();
+                res.status(200).send(data);
+            } catch (error) {
+                res.status(500).send('Error fetching data');
+            }
+        });
+
         this._app.post("/twilio", (req: Request, res: Response) => {
             console.log("Call Sid: ", req.body.CallSid);
             console.log("Call Status: ", req.body.CallStatus);
