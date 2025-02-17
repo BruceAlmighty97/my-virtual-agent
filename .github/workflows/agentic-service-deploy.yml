@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - 11-agentic---add-base-nestjs-service-and-infrastructure
     paths:
       - 'agentic-service/**'
       - '.github/workflows/agentic-service-deploy.yml'
