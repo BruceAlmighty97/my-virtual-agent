@@ -16,7 +16,7 @@ export class RestController {
 
         this._app.get("/test1", async (req: Request, res: Response) => {
             try {
-                const response = await fetch('http://agentic.geoffreyholland.com');
+                const response = await fetch('http://agentic.geoffreyholland.com:80');
                 const data = await response.text();
                 res.status(200).send(data);
             } catch (error) {
