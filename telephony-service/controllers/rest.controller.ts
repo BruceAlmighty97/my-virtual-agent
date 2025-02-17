@@ -18,7 +18,7 @@ export class RestController {
         this._app.get("/test1", async (req: Request, res: Response) => {
             console.log('hello')
             try {
-                const response = await axios.get('http://agentic.geoffreyholland.com');
+                const response = await axios.get('http://agentic.geoffreyholland.com:80');
                 const data = response.data;
                 res.status(200).send(data)
             } catch (error) {
