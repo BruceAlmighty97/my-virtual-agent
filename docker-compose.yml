@@ -16,6 +16,14 @@ services:
     container_name: "telephony-app"
     ports:
       - "3001:3000"
+  
+  agentic-service:
+    build:
+      context: ./agentic-service
+      dockerfile: Dockerfile
+    container_name: "agentic-service"
+    ports:
+      - "3002:3000"
     depends_on:
       - redis
 
