@@ -57,8 +57,8 @@ export class InfrastructureStack extends cdk.Stack {
 
     taskRole.addToPolicy(
       new iam.PolicyStatement({
-        actions: ["s3:GetObject"],
-        resources: ["arn:aws:s3:::gbh-virtual-agent-documents/*"],
+        actions: ["s3:GetObject", "s3:ListBucket"],
+        resources: ["*"],
         effect: iam.Effect.ALLOW,
       })
     );

@@ -1,21 +1,19 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import * as AWS from 'aws-sdk';
+import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class DocumentService implements OnModuleInit {
     private readonly _s3BucketName = 'gbh-virtual-agent-documents';
     constructor() {}
 
-    onModuleInit() {
+    async onModuleInit() {
         console.log('Run INIT code');
-        const s3 = new AWS.S3();
-
-        s3.listObjectsV2({ Bucket: this._s3BucketName }, (err, data) => {
-            if (err) {
-                console.error('Error fetching S3 bucket contents:', err);
-            } else {
-                console.log('S3 bucket contents:', data.Contents);
-            }
-        });
+        const s3Client = new S3Client({ region: 'us-east-1' });
+        try {
+            const data = await s3Client.send(new ListObjectsV2Command({ Bucket: this._s3BucketName }));
+            console.log('S3 bucket contents:', data.Contents);
+        } catch (err) {
+            console.error('Error fetching S3 bucket contents:', err);
+        }
     }
 }
