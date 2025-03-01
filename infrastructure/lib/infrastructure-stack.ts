@@ -10,6 +10,7 @@ import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as route53_targets from "aws-cdk-lib/aws-route53-targets";
+import * as s3 from "aws-cdk-lib/aws-s3";
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -45,6 +46,18 @@ export class InfrastructureStack extends cdk.Stack {
     executionRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ["ecr:GetAuthorizationToken"],
+        resources: ["*"],
+        effect: iam.Effect.ALLOW,
+      })
+    );
+
+    const taskRole = new iam.Role(this, "EcsTaskRole", {
+      assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+    });
+
+    taskRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:GetObject", "s3:ListBucket"],
         resources: ["*"],
         effect: iam.Effect.ALLOW,
       })
@@ -150,6 +163,7 @@ export class InfrastructureStack extends cdk.Stack {
             ),
             containerPort: 3000,
             executionRole: executionRole,
+            taskRole: taskRole,
             environment: {
               LANGSMITH_TRACING: 'true',
               LANGSMITH_ENDPOINT: 'https://api.smith.langchain.com',
@@ -192,9 +206,22 @@ export class InfrastructureStack extends cdk.Stack {
       .defaultChild as ecs.CfnService;
     agenticCfnService.serviceName = "mva-agentic-service";
 
+    this.createDocumentStorageAndUpdate();
+
     /* OUTPUT */
     new cdk.CfnOutput(this, "ALBDNS", {
       value: fargateService.loadBalancer.loadBalancerDnsName,
+    });
+  }
+
+  private createDocumentStorageAndUpdate() {
+    const bucketName = "gbh-virtual-agent-documents";
+    const bucket = new s3.Bucket(this, "DocumentStorageBucket", {
+      bucketName,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // Change to RETAIN in production
+      versioned: true,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
     });
   }
 }
