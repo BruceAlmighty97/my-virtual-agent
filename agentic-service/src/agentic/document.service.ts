@@ -18,7 +18,7 @@ export class DocumentService implements OnModuleInit {
     private _openaiKey: string;
 
     constructor(private _configService: ConfigService) {
-        this._openaiKey = this._configService.get<string>('LANGSMITH_API_KEY') || '';
+        this._openaiKey = this._configService.get<string>('OPENAI_API_KEY') || '';
     }
 
     async onModuleInit() {
