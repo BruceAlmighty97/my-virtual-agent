@@ -18,7 +18,7 @@ export class DocumentService implements OnModuleInit {
     private _openaiKey: string;
 
     constructor(private _configService: ConfigService) {
-        this._openaiKey = this._configService.get<string>('LANGSMITH_API_KEY') || '';
+        this._openaiKey = this._configService.get<string>('OPENAI_API_KEY') || '';
     }
 
     async onModuleInit() {
@@ -83,7 +83,7 @@ export class DocumentService implements OnModuleInit {
                 chunkOverlap: 250
             });
             const docs = await splitter.createDocuments([text])
-            const vectorStore = await FaissStore.fromDocuments(docs, new OpenAIEmbeddings({openAIApiKey: process.env.OPENAI_API_KEY}));
+            const vectorStore = await FaissStore.fromDocuments(docs, new OpenAIEmbeddings({openAIApiKey: this._openaiKey}));
             await vectorStore.save(this._faissIndexPath);
             console.log(`Vectorized text stored in Faiss at ${this._faissIndexPath}`);
         }
