@@ -8,9 +8,9 @@ import * as ecs_patterns from "aws-cdk-lib/aws-ecs-patterns";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as logs from "aws-cdk-lib/aws-logs";
-import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
-import * as route53_targets from "aws-cdk-lib/aws-route53-targets";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import { Vpc, SecurityGroup, Peer, Port } from 'aws-cdk-lib/aws-ec2';
+import { CfnSubnetGroup, CfnCacheCluster } from 'aws-cdk-lib/aws-elasticache';
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -20,6 +20,7 @@ export class InfrastructureStack extends cdk.Stack {
     const telephonySubdomain = `telephony.${domainName}`;
     const agenticSubdomain = `agentic.${domainName}`;
     const secretsName = "MyVirtualAgentSecrets";
+    let redisUrl: string;
 
     const hostedZone = route53.HostedZone.fromLookup(this, "HostedZone", {
       domainName,
@@ -27,6 +28,8 @@ export class InfrastructureStack extends cdk.Stack {
 
     /* COMMON ASSETS */
     const vpc = new ec2.Vpc(this, "Vpc", { maxAzs: 2 });
+
+    redisUrl = this.createRedisInstance(vpc);
 
     const cluster = new ecs.Cluster(this, "MyVirtualAgentCluster", {
       vpc,
@@ -101,7 +104,7 @@ export class InfrastructureStack extends cdk.Stack {
             containerPort: 3000,
             executionRole: executionRole,
             environment: {
-              AGENTIC_BASE_URL: 'https://agentic.geoffreyholland.com'
+              AGENTIC_BASE_URL: "https://agentic.geoffreyholland.com",
             },
             secrets: {
               DEEPGRAM_API_KEY: ecs.Secret.fromSecretsManager(
@@ -165,9 +168,10 @@ export class InfrastructureStack extends cdk.Stack {
             executionRole: executionRole,
             taskRole: taskRole,
             environment: {
-              LANGSMITH_TRACING: 'true',
-              LANGSMITH_ENDPOINT: 'https://api.smith.langchain.com',
-              LANGSMITH_PROJECT: 'my-virtual-agent'
+              LANGSMITH_TRACING: "true",
+              LANGSMITH_ENDPOINT: "https://api.smith.langchain.com",
+              LANGSMITH_PROJECT: "my-virtual-agent",
+              REDIS_URL: redisUrl
             },
             secrets: {
               LANGSMITH_API_KEY: ecs.Secret.fromSecretsManager(
@@ -223,5 +227,38 @@ export class InfrastructureStack extends cdk.Stack {
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
     });
+  }
+
+  private createRedisInstance(vpc: Vpc): string {
+    // Security Group for Redis
+    const redisSecurityGroup = new SecurityGroup(this, "RedisSecurityGroup", {
+      vpc,
+      description: "Allow Redis access",
+      allowAllOutbound: true,
+    });
+    redisSecurityGroup.addIngressRule(
+      Peer.anyIpv4(),
+      Port.tcp(6379),
+      "Allow Redis access"
+    );
+
+    // Create a subnet group for Redis
+    const subnetGroup = new CfnSubnetGroup(this, "RedisSubnetGroup", {
+      description: "Subnet group for Redis cluster",
+      subnetIds: vpc.privateSubnets.map((subnet) => subnet.subnetId),
+    });
+
+    // Create the Redis cluster
+    const redisCluster = new CfnCacheCluster(this, "RedisCluster", {
+      cacheNodeType: "cache.t3.micro", // Change as needed
+      engine: "redis",
+      numCacheNodes: 1, // Single-node Redis instance
+      cacheSubnetGroupName: subnetGroup.ref,
+      vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
+    });
+
+    // Store Redis endpoint in SSM Parameter Store
+    const redisUrl = `redis://${redisCluster.attrRedisEndpointAddress}`;
+    return redisUrl
   }
 }
