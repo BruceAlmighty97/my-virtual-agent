@@ -22,6 +22,10 @@ services:
       context: ./agentic-service
       dockerfile: Dockerfile
     container_name: "agentic-service"
+    volumes:
+      - ~/.aws:/root/.aws
+    environment:
+      - AWS_PROFILE=macbook
     ports:
       - "3002:3000"
     depends_on:
