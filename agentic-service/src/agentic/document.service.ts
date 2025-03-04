@@ -9,6 +9,7 @@ import { promisify } from 'util';
 import * as stream from 'stream';
 import * as path from 'path';
 import { ConfigService } from '@nestjs/config';
+import { DocumentInterface } from '@langchain/core/documents';
 
 @Injectable()
 export class DocumentService implements OnModuleInit {
@@ -91,5 +92,18 @@ export class DocumentService implements OnModuleInit {
         catch (err) {
             console.log('Error vectorizing text: ', err);
         }
+    }
+
+    public async similaritySearch(query: string): Promise<DocumentInterface[]> {
+        try {
+            const docs = await this._vectorStore.similaritySearch(query);
+            console.log(`Found ${docs.length} similar documents`);
+            console.log(docs);
+            return docs;
+        }
+        catch (err) {
+            console.error('Error searching for similar documents:', err);
+            return [];
+        }    
     }
 }

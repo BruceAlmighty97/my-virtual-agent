@@ -6,6 +6,7 @@ export enum OpenAiLlmModels {
     GPT_4O = 'gpt-4o',
     GPT_4O_MINI = 'gpt-4o-mini',
     GPT_40_TURBO = 'gpt-4-turbo',
+    GPT_35_TURBO = 'gpt-3.5-turbo',
 }
 
 @Injectable()
