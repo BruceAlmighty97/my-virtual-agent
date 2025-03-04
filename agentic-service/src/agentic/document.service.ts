@@ -15,6 +15,7 @@ export class DocumentService implements OnModuleInit {
     private readonly _s3BucketName = 'gbh-virtual-agent-documents';
     private readonly _s3Client: S3Client = new S3Client({ region: 'us-east-1' });
     private readonly _faissIndexPath = 'faiss_index';
+    private _vectorStore: FaissStore;
     private _openaiKey: string;
 
     constructor(private _configService: ConfigService) {
@@ -83,8 +84,8 @@ export class DocumentService implements OnModuleInit {
                 chunkOverlap: 250
             });
             const docs = await splitter.createDocuments([text])
-            const vectorStore = await FaissStore.fromDocuments(docs, new OpenAIEmbeddings({openAIApiKey: this._openaiKey}));
-            await vectorStore.save(this._faissIndexPath);
+            this._vectorStore = await FaissStore.fromDocuments(docs, new OpenAIEmbeddings({openAIApiKey: this._openaiKey}));
+            await this._vectorStore.save(this._faissIndexPath);
             console.log(`Vectorized text stored in Faiss at ${this._faissIndexPath}`);
         }
         catch (err) {
