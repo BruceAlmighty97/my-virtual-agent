@@ -2,11 +2,8 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Annotation, StateGraph } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { pull } from "langchain/hub";
-import { SystemMessage, HumanMessage } from "@langchain/core/messages";
+import { ChatPromptTemplate, SystemMessagePromptTemplate } from "@langchain/core/prompts";
 import Redis from "ioredis";
-import dotenv from "dotenv";
 import { LlmModelService, OpenAiLlmModels } from './llm-model.service';
 import { DocumentService } from './document.service';
 import { Document } from "@langchain/core/documents";
@@ -36,7 +33,6 @@ export class AgentGraphService implements OnModuleInit{
         //     host: this._configService.get<string>('REDIS_HOST') || 'localhost',
         //     port: this._configService.get<number>('REDIS_PORT') || 6379,
         // });
-
         this._llm = this._llmModelService.getOpenAiModel(OpenAiLlmModels.GPT_35_TURBO);
     }
 
@@ -55,7 +51,23 @@ export class AgentGraphService implements OnModuleInit{
     }
 
     async onModuleInit(): Promise<void> {
-        this._ragTemplate = await pull<ChatPromptTemplate>("rlm/rag-prompt");
+        this._ragTemplate = new ChatPromptTemplate({
+            templateFormat: 'f-string',
+            inputVariables: ['context', 'question'],
+            validateTemplate: true,
+            promptMessages: [
+                SystemMessagePromptTemplate.fromTemplate(`
+                    You are a virtual assistant meant to answer questions about the work experience of Geoff Holland.
+                    You will have access to a set of documents that contain information about Geoff's work experience.
+                    You can use this information to answer questions about Geoff's work experience. Don't use his full name, just refer to him as Geoff.
+                    Be friendly and helpful in your responses.
+                    Try and limit responses to 4-5 sentences if possible.
+                    Here is the context {context}
+                    Here is the question {question}
+                    Answer the question.
+                `),
+            ]
+        });
         this._agentGraph = this.constructGraph();
     }
 
