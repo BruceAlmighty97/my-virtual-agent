@@ -4,8 +4,6 @@ import { DocumentService } from './services/document.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LlmModelService } from './services/llm-model.service';
 import { AgentGraphService } from './services/agent-graph.service';
-import { APP_GUARD } from '@nestjs/core';
-import { ApiKeyGuard } from './api-key.guard';
 
 @Module({
   imports: [ConfigModule],
@@ -14,11 +12,7 @@ import { ApiKeyGuard } from './api-key.guard';
     DocumentService,
     ConfigService,
     LlmModelService,
-    AgentGraphService,
-    {
-      provide: APP_GUARD,
-      useClass: ApiKeyGuard
-    }
+    AgentGraphService
   ],
 })
 export class AgenticModule {}
