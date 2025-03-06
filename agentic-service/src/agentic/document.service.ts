@@ -49,7 +49,7 @@ export class DocumentService implements OnModuleInit {
                 ${text}
                 `;
       }
-      this.vectorizeText(fullText);
+      await this.vectorizeText(fullText);
     } catch (err) {
       console.error('Error fetching S3 bucket contents:', err);
     }
