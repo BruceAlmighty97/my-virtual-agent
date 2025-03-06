@@ -1,7 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { AgentGraphService } from './agent-graph.service';
-import { SimpleQueryRequestDto } from './dto/simple-query-request.dto';
-import { SimpleQueryResponseDto } from './dto/simple-query-response.dto';
+import { AgentGraphService } from './services/agent-graph.service';
+import { SimpleQueryRequestDto } from './dtos/simple-query-request.dto';
+import { SimpleQueryResponseDto } from './dtos/simple-query-response.dto';
 
 @Controller('agentic')
 export class AgenticController {

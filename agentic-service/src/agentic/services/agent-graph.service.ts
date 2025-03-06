@@ -9,7 +9,7 @@ import {
 import { LlmModelService, OpenAiLlmModels } from './llm-model.service';
 import { DocumentService } from './document.service';
 import { Document } from '@langchain/core/documents';
-import { SimpleQueryRequestDto } from './dto/simple-query-request.dto';
+import { SimpleQueryRequestDto } from './dtos/simple-query-request.dto';
 
 @Injectable()
 export class AgentGraphService implements OnModuleInit {

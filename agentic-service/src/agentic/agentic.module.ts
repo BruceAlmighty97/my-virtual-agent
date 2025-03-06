@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AgenticController } from './agentic.controller';
-import { DocumentService } from './document.service';
+import { DocumentService } from './services/document.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { LlmModelService } from './llm-model.service';
-import { AgentGraphService } from './agent-graph.service';
+import { LlmModelService } from './services/llm-model.service';
+import { AgentGraphService } from './services/agent-graph.service';
 
 @Module({
   imports: [ConfigModule],
