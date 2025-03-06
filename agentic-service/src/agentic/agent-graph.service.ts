@@ -54,7 +54,7 @@ export class AgentGraphService implements OnModuleInit {
     return { answer: response.content };
   }
 
-  async onModuleInit(): Promise<void> {
+  onModuleInit(): void {
     this._ragTemplate = new ChatPromptTemplate({
       templateFormat: 'f-string',
       inputVariables: ['context', 'question'],
