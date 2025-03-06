@@ -8,6 +8,11 @@ import { AgentGraphService } from './agent-graph.service';
 @Module({
   imports: [ConfigModule],
   controllers: [AgenticController],
-  providers: [DocumentService, ConfigService, LlmModelService, AgentGraphService]
+  providers: [
+    DocumentService,
+    ConfigService,
+    LlmModelService,
+    AgentGraphService,
+  ],
 })
 export class AgenticModule {}

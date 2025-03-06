@@ -5,24 +5,23 @@ import { SimpleQueryResponseDto } from './dto/simple-query-response.dto';
 
 @Controller('agentic')
 export class AgenticController {
+  constructor(private _agentGraphService: AgentGraphService) {}
 
-    constructor(private _agentGraphService: AgentGraphService) {};
+  @Post('/start-session')
+  startSession(): string {
+    return 'Session started';
+  }
 
-    @Post('/start-session')
-    startSession(): string {
-        return "Session started";
-    }
-
-    @Post('/simple-query')
-    async simpleQuery(@Body() request: SimpleQueryRequestDto): Promise<SimpleQueryResponseDto> {
-        const answer = await this._agentGraphService.makeSimpleQuery(request);
-        console.log(`Answer: ${answer}`);
-        return {
-            inputText: request.inputText,
-            outputText: answer,
-            sessionId: request.sessionId
-        } 
-    }
-
-
+  @Post('/simple-query')
+  async simpleQuery(
+    @Body() request: SimpleQueryRequestDto,
+  ): Promise<SimpleQueryResponseDto> {
+    const answer = await this._agentGraphService.makeSimpleQuery(request);
+    console.log(`Answer: ${answer}`);
+    return {
+      inputText: request.inputText,
+      outputText: answer,
+      sessionId: request.sessionId,
+    };
+  }
 }

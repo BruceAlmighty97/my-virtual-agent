@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class SimpleQueryRequestDto {
-    @IsString()
-    @IsNotEmpty()
-    inputText: string;
+  @IsString()
+  @IsNotEmpty()
+  inputText: string;
 
-    @IsString()
-    @IsNotEmpty()
-    sessionId: string;
+  @IsString()
+  @IsNotEmpty()
+  sessionId: string;
 }

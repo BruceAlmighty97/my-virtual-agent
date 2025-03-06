@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { LlmModelService, OpenAiLlmModels } from './llm-model.service';
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOpenAI } from '@langchain/openai';
 
-jest.mock("@langchain/openai");
+jest.mock('@langchain/openai');
 
 describe('LlmModelService', () => {
   let service: LlmModelService;
