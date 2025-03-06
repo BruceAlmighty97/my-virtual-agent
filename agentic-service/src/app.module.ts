@@ -4,10 +4,7 @@ import { AgenticModule } from './agentic/agentic.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [
-    AgenticModule,
-    ConfigModule.forRoot()
-  ],
+  imports: [AgenticModule, ConfigModule.forRoot()],
   controllers: [AppController],
   providers: [],
 })
