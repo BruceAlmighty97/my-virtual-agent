@@ -6,7 +6,6 @@ import {
   ChatPromptTemplate,
   SystemMessagePromptTemplate,
 } from '@langchain/core/prompts';
-import Redis from 'ioredis';
 import { LlmModelService, OpenAiLlmModels } from './llm-model.service';
 import { DocumentService } from './document.service';
 import { Document } from '@langchain/core/documents';
@@ -14,7 +13,6 @@ import { SimpleQueryRequestDto } from './dto/simple-query-request.dto';
 
 @Injectable()
 export class AgentGraphService implements OnModuleInit {
-  // private _redisClient: Redis;
   private _llm: ChatOpenAI;
   private _agentGraph;
   private _inputStateAnnotation = Annotation.Root({
@@ -32,10 +30,6 @@ export class AgentGraphService implements OnModuleInit {
     private _llmModelService: LlmModelService,
     private _documentService: DocumentService,
   ) {
-    // this._redisClient = new Redis({
-    //     host: this._configService.get<string>('REDIS_HOST') || 'localhost',
-    //     port: this._configService.get<number>('REDIS_PORT') || 6379,
-    // });
     this._llm = this._llmModelService.getOpenAiModel(
       OpenAiLlmModels.GPT_35_TURBO,
     );
