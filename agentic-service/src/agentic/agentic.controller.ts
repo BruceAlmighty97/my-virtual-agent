@@ -1,9 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { AgentGraphService } from './agent-graph.service';
-import { SimpleQueryRequestDto } from './dto/simple-query-request.dto';
-import { SimpleQueryResponseDto } from './dto/simple-query-response.dto';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { AgentGraphService } from './services/agent-graph.service';
+import { SimpleQueryRequestDto } from './dtos/simple-query-request.dto';
+import { SimpleQueryResponseDto } from './dtos/simple-query-response.dto';
+import { ApiKeyGuard } from './api-key.guard';
 
 @Controller('agentic')
+@UseGuards(ApiKeyGuard)
 export class AgenticController {
   constructor(private _agentGraphService: AgentGraphService) {}
 
