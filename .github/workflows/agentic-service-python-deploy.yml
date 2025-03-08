@@ -1,0 +1,50 @@
+name: Agentic Service Python Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - python-build
+    # paths:
+    #   - 'agentic-service/**'
+    #   - '.github/workflows/agentic-service-deploy.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCOUNT: 456235764148
+      AWS_REGION: us-east-1
+      ECS_CLUSTER: mva-cluster
+      ECS_SERVICE: mva-agentic-service
+      ECR_REPOSITORY: mva-agentic
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials via OIDC
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActionsSession
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      run: |
+        aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+    - name: Build, Tag, and Push Docker Image
+      run: |
+        docker build -t ${{ env.ECR_REPOSITORY }} ./agentic-service-python
+        docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+        docker push ${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+
+    - name: Update ECS Service
+      run: |
+        aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
