@@ -31,5 +31,17 @@ services:
     depends_on:
       - redis
 
+  agentic-service-python:
+    build:
+      context: ./agentic-service-python
+      dockerfile: Dockerfile
+    container_name: "agentic-service-python"
+    volumes:
+      - ~/.aws:/root/.aws
+    environment:
+      - AWS_PROFILE=macbook
+    ports:
+      - "8001:8000"
+
 volumes:
   redis_data:
