@@ -12,7 +12,6 @@ class BaseController:
         self._app.include_router(self._router)
 
     def healthcheck(self):
-        print(self._app.state.test_variable)
         return {"status": "ok"}
     
     def test(self):
