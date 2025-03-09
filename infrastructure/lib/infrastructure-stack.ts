@@ -257,7 +257,6 @@ export class InfrastructureStack extends cdk.Stack {
       vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
     });
 
-    // Store Redis endpoint in SSM Parameter Store
     const redisUrl = `redis://${redisCluster.attrRedisEndpointAddress}`;
     return redisUrl
   }
