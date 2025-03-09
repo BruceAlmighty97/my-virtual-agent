@@ -40,6 +40,8 @@ services:
       - ~/.aws:/root/.aws
     environment:
       - AWS_PROFILE=macbook
+    env_file:
+      - ./agentic-service-python/.env
     ports:
       - "3003:3000"
 

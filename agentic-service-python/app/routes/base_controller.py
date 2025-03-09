@@ -1,11 +1,19 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
 
-router = APIRouter(tags=["Base"])
+class BaseController:
+    _app: FastAPI = None
+    _router: APIRouter = None
 
-@router.get("/")
-def healthcheck():
-    return {"status": "ok"}
+    def __init__(self, app: FastAPI):
+        self._app = app
+        self._router = APIRouter(tags=["Base"])
+        self._router.add_api_route("/", self.healthcheck)
+        self._router.add_api_route("/test", self.test)
+        self._app.include_router(self._router)
 
-@router.get("/test")
-def test():
-    return {"online": True}
+    def healthcheck(self):
+        print(self._app.state.test_variable)
+        return {"status": "ok"}
+    
+    def test(self):
+        return {"online": True}
