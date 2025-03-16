@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Annotation, StateGraph } from '@langchain/langgraph';
+import { Annotation, StateGraph, MemorySaver } from '@langchain/langgraph';
 import { ChatOpenAI } from '@langchain/openai';
 import {
   ChatPromptTemplate,
@@ -8,7 +8,6 @@ import {
 } from '@langchain/core/prompts';
 import { LlmModelService, OpenAiLlmModels } from './llm-model.service';
 import { DocumentService } from './document.service';
-import { Document } from '@langchain/core/documents';
 import { SimpleQueryRequestDto } from '../dtos/simple-query-request.dto';
 
 @Injectable()
@@ -20,7 +19,7 @@ export class AgentGraphService implements OnModuleInit {
   });
   private _stateAnnotation = Annotation.Root({
     question: Annotation<string>,
-    context: Annotation<Document[]>,
+    context: Annotation<string>,
     answer: Annotation<string>,
   });
   private _ragTemplate: ChatPromptTemplate;
@@ -37,14 +36,12 @@ export class AgentGraphService implements OnModuleInit {
 
   private async retrieve(state: typeof this._inputStateAnnotation.State) {
     console.log(`Retrieving documents for question: ${state.question}`);
-    const retrievedDocs = await this._documentService.similaritySearch(
-      state.question,
-    );
+    const retrievedDocs = await this._documentService.getDocumentText();
     return { context: retrievedDocs };
   }
 
   private async generate(state: typeof this._stateAnnotation.State) {
-    const docsContent = state.context.map((doc) => doc.pageContent).join('\n');
+    const docsContent = state.context;
     const messages = await this._ragTemplate.invoke({
       question: state.question,
       context: docsContent,
@@ -66,7 +63,7 @@ export class AgentGraphService implements OnModuleInit {
                     You can use this information to answer questions about Geoff's work experience. Don't use his full name, just refer to him as Geoff.
                     Be friendly and helpful in your responses.
                     Try and limit responses to 4-5 sentences if possible.
-                    Here is the context {context}
+                    Here is the context: {context}
                     Here is the question {question}
                     Answer the question.
                 `),
