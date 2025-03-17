@@ -46,12 +46,7 @@ export class DocumentService implements OnModuleInit {
         if (!file.Key || !file.Key.endsWith('.pdf')) continue;
         const text = await this.downloadAndExtractText(file.Key);
         this._documentText += '\n' + text;
-        // fullText += `
-        //         --------------------------------------
-        //         ${text}
-        //         `;
       }
-      // await this.vectorizeText(fullText);
     } catch (err) {
       console.error('Error fetching S3 bucket contents:', err);
     }
@@ -91,34 +86,4 @@ export class DocumentService implements OnModuleInit {
   public getDocumentText(): string {
     return this._documentText;
   }
-
-  // private async vectorizeText(text: string) {
-  //   try {
-  //     const splitter = new RecursiveCharacterTextSplitter({
-  //       chunkSize: 1000,
-  //       chunkOverlap: 250,
-  //     });
-  //     const docs = await splitter.createDocuments([text]);
-  //     this._vectorStore = await FaissStore.fromDocuments(
-  //       docs,
-  //       new OpenAIEmbeddings({ openAIApiKey: this._openaiKey }),
-  //     );
-  //     await this._vectorStore.save(this._faissIndexPath);
-  //     console.log(`Vectorized text stored in Faiss at ${this._faissIndexPath}`);
-  //   } catch (err) {
-  //     console.log('Error vectorizing text: ', err);
-  //   }
-  // }
-
-  // public async similaritySearch(query: string): Promise<DocumentInterface[]> {
-  //   try {
-  //     const docs = await this._vectorStore.similaritySearch(query);
-  //     console.log(`Found ${docs.length} similar documents`);
-  //     console.log(docs);
-  //     return docs;
-  //   } catch (err) {
-  //     console.error('Error searching for similar documents:', err);
-  //     return [];
-  //   }
-  // }
 }
