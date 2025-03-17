@@ -157,7 +157,6 @@ export class MyGraphService {
             }, 
             config
         );
-        // console.log("Response:", response);
         if (!response.messages || response.messages.length === 0) {
             console.warn("No messages found in response.");
             return "No response generated.";
