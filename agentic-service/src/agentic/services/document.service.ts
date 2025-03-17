@@ -21,6 +21,7 @@ export class DocumentService implements OnModuleInit {
   private readonly _s3Client: S3Client = new S3Client({ region: 'us-east-1' });
   private readonly _faissIndexPath = 'faiss_index';
   private _vectorStore: FaissStore;
+  private _documentText: string = '';
   private _openaiKey: string;
 
   constructor(private _configService: ConfigService) {
@@ -44,12 +45,8 @@ export class DocumentService implements OnModuleInit {
         console.log(`Grabbing info from file... ${file.Key}`);
         if (!file.Key || !file.Key.endsWith('.pdf')) continue;
         const text = await this.downloadAndExtractText(file.Key);
-        fullText += `
-                --------------------------------------
-                ${text}
-                `;
+        this._documentText += '\n' + text;
       }
-      await this.vectorizeText(fullText);
     } catch (err) {
       console.error('Error fetching S3 bucket contents:', err);
     }
@@ -78,7 +75,7 @@ export class DocumentService implements OnModuleInit {
       const loader = new PDFLoader(tempFilePath);
       const docs = await loader.load();
       const text = docs.map((doc) => doc.pageContent).join('\n');
-      unlinkSync(tempFilePath); // Remove temp file
+      unlinkSync(tempFilePath);
       return text;
     } catch (err) {
       console.error(`Error downloading/extracting text from ${fileKey}:`, err);
@@ -86,33 +83,7 @@ export class DocumentService implements OnModuleInit {
     }
   }
 
-  private async vectorizeText(text: string) {
-    try {
-      const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 1000,
-        chunkOverlap: 250,
-      });
-      const docs = await splitter.createDocuments([text]);
-      this._vectorStore = await FaissStore.fromDocuments(
-        docs,
-        new OpenAIEmbeddings({ openAIApiKey: this._openaiKey }),
-      );
-      await this._vectorStore.save(this._faissIndexPath);
-      console.log(`Vectorized text stored in Faiss at ${this._faissIndexPath}`);
-    } catch (err) {
-      console.log('Error vectorizing text: ', err);
-    }
-  }
-
-  public async similaritySearch(query: string): Promise<DocumentInterface[]> {
-    try {
-      const docs = await this._vectorStore.similaritySearch(query);
-      console.log(`Found ${docs.length} similar documents`);
-      console.log(docs);
-      return docs;
-    } catch (err) {
-      console.error('Error searching for similar documents:', err);
-      return [];
-    }
+  public getDocumentText(): string {
+    return this._documentText;
   }
 }

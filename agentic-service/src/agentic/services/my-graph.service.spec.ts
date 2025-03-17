@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AgentGraphService } from './agent-graph.service';
+import { MyGraphService } from './my-graph.service';
 
-describe('AgentGraphService', () => {
-  let service: AgentGraphService;
+describe('MyGraphService', () => {
+  let service: MyGraphService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AgentGraphService],
+      providers: [MyGraphService],
     }).compile();
 
-    service = module.get<AgentGraphService>(AgentGraphService);
+    service = module.get<MyGraphService>(MyGraphService);
   });
 
   it('should be defined', () => {
