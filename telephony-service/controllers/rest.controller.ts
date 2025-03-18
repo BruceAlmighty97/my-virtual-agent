@@ -16,13 +16,18 @@ export class RestController {
         });
 
         this._app.post("/twilio", (req: Request, res: Response) => {
-            console.log("Call Sid: ", req.body.CallSid);
-            console.log("Call Status: ", req.body.CallStatus);
-
             const response = new twiml.VoiceResponse();
-            response.connect({ action: "/status" }).stream({
+            const connect = response.connect({ action: "/status" }).stream({
                 url: `wss://${req.headers.host}?CallSid=${req.body.CallSid}`,
                 name: "GeoffreyStream"
+            })
+            connect.parameter({
+                name: "CallSid",
+                value: req.body.CallSid
+            })
+            connect.parameter({
+                name: "FromNumber",
+                value: req.body.From
             });
             res.type("text/xml");
             res.send(response.toString());
