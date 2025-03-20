@@ -3,6 +3,7 @@ import WebSocket, { WebSocketServer } from "ws";
 import { DeepgramService, DeepgramTranscriptionResults } from "../services/deepgram.service";
 import { ElevenlabsService } from "../services/elevenlabs.service";
 import { LiveTranscriptionEvents } from "@deepgram/sdk";
+import { AgenticApiService } from "../services/agentic-api.service";
 
 interface TwilioSocketMessage {
     event: 'start' | 'stop' | 'media';
@@ -11,6 +12,9 @@ interface TwilioSocketMessage {
     start?: {
         streamSid: string;
         callSid: string;
+        customParameters: {
+            [key: string]: string;
+        }
     }
     media?: {
         track: string;
@@ -23,11 +27,13 @@ export class SocketController {
     private _ws: WebSocketServer;
     private _deepgramService: DeepgramService;
     private _elevenlabsService: ElevenlabsService;
+    private _agenticApiService: AgenticApiService
 
     constructor(ws: WebSocketServer) {
         this._ws = ws;
         this._deepgramService = new DeepgramService();
         this._elevenlabsService = new ElevenlabsService();
+        this._agenticApiService = new AgenticApiService();
     }
 
     public initialize() {
@@ -35,6 +41,7 @@ export class SocketController {
             const deepgramSocket = this._deepgramService.getListenSocket();
             let callSid: string;
             let streamSid: string;
+            let fromNumber: string;
 
             ws.onmessage = async (message: WebSocket.MessageEvent) => {
                 const data = JSON.parse(message.data.toString()) as TwilioSocketMessage;
@@ -42,8 +49,12 @@ export class SocketController {
                 if (data.event === 'start') {
                     callSid = data.start?.callSid ?? "";
                     streamSid = data.start?.streamSid ?? "";
-                    console.log(`Call started for callSid ${callSid}`);
-                    this.sendAudioToCall(ws, streamSid, 'Hello, welcome to the call, I am your personal virtual assistant, Jessica. How can I help you?');
+                    fromNumber = data.start?.customParameters?.FromNumber ?? ""
+                    const response = await this._agenticApiService.getAgenticResponse({
+                        input: 'Hello',
+                        fromNumber: fromNumber
+                    });
+                    this.sendAudioToCall(ws, streamSid, response.response);
                 }
 
                 if (data.event === 'media') {
@@ -61,7 +72,13 @@ export class SocketController {
                         const transcript = data?.channel?.alternatives[0]?.transcript || "";
                         if (transcript !== "") {
                             console.log(`Transcript received for callSid ${callSid}: ${transcript}`);
-                            this.sendAudioToCall(ws, streamSid, `It sounds like you said, ${transcript}. Is that correct?`);
+                            const initTime = Date.now();
+                            const response = await this._agenticApiService.getAgenticResponse({
+                                input: transcript,
+                                fromNumber: fromNumber
+                            });
+                            console.log(`Agentic api call took ${Date.now() - initTime} milliseconds`)
+                            this.sendAudioToCall(ws, streamSid, response.response);
                         }
                     }
                 });

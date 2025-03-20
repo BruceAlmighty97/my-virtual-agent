@@ -11,6 +11,11 @@ import { DocumentService } from './document.service';
 import { SimpleQueryRequestDto } from '../dtos/simple-query-request.dto';
 import { AIMessage, BaseMessage, ChatMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
+import { TelephonyQueryRequest } from '../dtos/telephony-query-request.dto';
+import Redis from 'ioredis';
+import { v4 as uuidv4 } from 'uuid';
+import { TelephonyQueryResponse } from '../dtos/telephony-query-response.dto';
+import { response } from 'express';
 
 
 @Injectable()
@@ -18,6 +23,7 @@ export class MyGraphService {
     private _llm: ChatOpenAI;
     private _stateAnnotation: AnnotationRoot<any>;
     private _agent;
+    private _redisClient: Redis;
 
     constructor(
         private _configService: ConfigService,
@@ -31,6 +37,18 @@ export class MyGraphService {
             }),
             hasVisited: Annotation<boolean>(),
             threadId: Annotation<string>(),
+        });
+
+        const redisHost = this._configService.get<string>('REDIS_HOST');
+        const redisPort = this._configService.get<number>('REDIS_PORT');
+
+        this._redisClient = new Redis({
+            host: this._configService.get<string>('REDIS_HOST'),
+            port: this._configService.get<number>('REDIS_PORT'),
+        });
+
+        this._redisClient.on('error', (err) => {
+            console.error('Redis error:', err);
         });
 
         const builder = new StateGraph(this._stateAnnotation)
@@ -171,5 +189,47 @@ export class MyGraphService {
             console.warn("No AI message found in response.");
             return "No AI response available.";
         }
+    }
+
+    public async telephonyRequest(request: TelephonyQueryRequest): Promise<TelephonyQueryResponse> {
+        const redisKey = `telephone:${request.fromNumber}`;
+        let sessionId = await this._redisClient.get(redisKey);
+        let responseMessage = `I'm sorry, there must have been an issue with the system`
+
+        if (!sessionId) {
+            sessionId = uuidv4();
+            await this._redisClient.set(redisKey, sessionId);
+        }
+        const config: RunnableConfig = {
+            runId: sessionId,
+            configurable: {
+                thread_id: sessionId
+            }
+        }
+        const response = await this._agent.invoke(
+            {
+                messages: [new HumanMessage(request.input)],
+                threadId: sessionId
+            }, 
+            config
+        );
+
+        if (!response.messages || response.messages.length === 0) {
+            console.warn("No messages found in response.");
+        }
+    
+        const latestMessage = response.messages.findLast(msg => msg instanceof AIMessage);
+    
+        if (latestMessage) {
+            responseMessage = latestMessage.content
+        } else {
+            console.warn("No AI message found in response.");
+        }
+
+        return {
+            input: request.input,
+            fromNumber: request.fromNumber,
+            response: responseMessage
+        } as TelephonyQueryResponse;
     }
 }

@@ -66,6 +66,14 @@ export class InfrastructureStack extends cdk.Stack {
       })
     );
 
+    taskRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["elasticache:Describe*", "elasticache:Get*", "elasticache:List*"],
+        resources: ["*"],
+        effect: iam.Effect.ALLOW,
+      })
+    );
+
     const logGroup = new logs.LogGroup(this, "TelephonyLogGroup", {
       logGroupName: "/ecs/my-virtual-agent",
       removalPolicy: cdk.RemovalPolicy.DESTROY, // Change to RETAIN in production
@@ -96,7 +104,7 @@ export class InfrastructureStack extends cdk.Stack {
           cluster,
           memoryLimitMiB: 512,
           cpu: 256,
-          desiredCount: 2,
+          desiredCount: 1,
           taskImageOptions: {
             image: ecs.ContainerImage.fromRegistry(
               "456235764148.dkr.ecr.us-east-1.amazonaws.com/mva-telephony:latest"
@@ -159,7 +167,7 @@ export class InfrastructureStack extends cdk.Stack {
           cluster,
           memoryLimitMiB: 1024,
           cpu: 512,
-          desiredCount: 2,
+          desiredCount: 1,
           taskImageOptions: {
             image: ecs.ContainerImage.fromRegistry(
               "456235764148.dkr.ecr.us-east-1.amazonaws.com/mva-agentic:latest"
@@ -171,7 +179,8 @@ export class InfrastructureStack extends cdk.Stack {
               LANGSMITH_TRACING: "true",
               LANGSMITH_ENDPOINT: "https://api.smith.langchain.com",
               LANGSMITH_PROJECT: "my-virtual-agent",
-              REDIS_URL: redisUrl
+              REDIS_HOST: 'inf-re-1w0mhoyq4fl7a.c7tc0g.0001.use1.cache.amazonaws.com',
+              REDIS_URL: '6739'
             },
             secrets: {
               LANGSMITH_API_KEY: ecs.Secret.fromSecretsManager(
