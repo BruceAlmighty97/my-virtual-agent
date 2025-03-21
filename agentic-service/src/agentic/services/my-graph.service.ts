@@ -16,6 +16,7 @@ import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { TelephonyQueryResponse } from '../dtos/telephony-query-response.dto';
 import { response } from 'express';
+import { AiTasks, PromptService } from './prompt.service';
 
 
 @Injectable()
@@ -28,7 +29,8 @@ export class MyGraphService {
     constructor(
         private _configService: ConfigService,
         private _llmModelService: LlmModelService,
-        private _documentService: DocumentService
+        private _documentService: DocumentService,
+        private _promptService: PromptService
     ) {
         this._llm = this._llmModelService.getOpenAiModel(OpenAiLlmModels.GPT_35_TURBO);
         this._stateAnnotation = Annotation.Root({
@@ -106,12 +108,23 @@ export class MyGraphService {
     }
 
     private async greetingNode(input: typeof this._stateAnnotation.State): Promise<typeof this._stateAnnotation.State> {
-        const message = input.hasVisited ? "Hello again! How can I assist you today?" : "Hello! How can I assist you today?";
+        const prompt = this._promptService.getPrompt(AiTasks.GREETING, input);
+        const llmResponse = await this._llm.generate(
+            [[
+                {role: "system", content: prompt}
+            ]]
+        );
         return {
-            messages: [new AIMessage(message)],
+            messages: [new AIMessage(llmResponse.generations[0][0].text)],
             hasVisited: true,
             threadId: input.threadId
         };
+        // const message = input.hasVisited ? "Hello again! How can I assist you today?" : "Hello! How can I assist you today?";
+        // return {
+        //     messages: [new AIMessage(message)],
+        //     hasVisited: true,
+        //     threadId: input.threadId
+        // };
     }
 
     private async workExperienceNode(input: typeof this._stateAnnotation.State): Promise<typeof this._stateAnnotation.State> {

@@ -4,6 +4,7 @@ import { DocumentService } from './services/document.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LlmModelService } from './services/llm-model.service';
 import { MyGraphService } from './services/my-graph.service';
+import { PromptService } from './services/prompt.service';
 
 @Module({
   imports: [ConfigModule],
@@ -12,7 +13,8 @@ import { MyGraphService } from './services/my-graph.service';
     DocumentService,
     ConfigService,
     LlmModelService,
-    MyGraphService
+    MyGraphService,
+    PromptService
   ],
 })
 export class AgenticModule {}
